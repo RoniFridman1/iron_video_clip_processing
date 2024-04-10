@@ -1,0 +1,11 @@
+boto3
+opencv-python
+ultralytics
+insightface
+onnxruntime
+imutils
+deepface
+CodeFormer
+lapx
+tqdm
+ec2-metadata

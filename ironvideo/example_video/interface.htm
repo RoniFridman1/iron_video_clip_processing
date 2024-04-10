@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;200;300;400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=League+Spartan:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Frame Overlay</title>
+    <style>
+        ::-webkit-scrollbar {
+          width: 12px; /* You can adjust this to your desired width */
+          height: 12px; /* You can adjust this to your desired height */
+        }
+        
+        /* Track (the area where the scrollbar runs) */
+        ::-webkit-scrollbar-track {
+            border-radius: 100px;
+            background: #3E3E3E;
+        }
+        
+        /* Thumb (the draggable part of the scrollbar) */
+        ::-webkit-scrollbar-thumb {
+            border-radius: 100px;
+            background: #767676;            
+        }
+        
+        /* On hover, style the thumb */
+        ::-webkit-scrollbar-thumb:hover {
+        }
+    
+        body {
+            --header-height:50px;
+            --footer-height:50px;
+            background: #383838;            
+            
+            display: grid;
+            grid-template-rows: max-content 1fr max-content;
+            height: 100vh;
+            max-height: 100vh;
+            
+            margin:0;
+            padding:0;
+            
+            font-family: Inter;
+        }
+        
+        #video-container-container-container {
+            overflow-y:hidden;
+            position: relative;
+            
+            display: grid;
+            grid-template-rows: max-content max-content max-content max-content max-content;            
+            
+            min-width: max-content;
+            
+            padding:15px;
+            
+            grid-row-gap: 10px;
+        }
+        
+        body.inspectSize #video-container-container-container {
+            grid-template-rows: max-content max-content 1fr max-content max-content;            
+        }
+        
+        #video-container-container-container > .intro {
+            grid-row:1;
+            
+            display: grid;
+            grid-template-columns: max-content max-content;
+            justify-content: start;
+            align-content: center;
+            align-items: center;
+            grid-column-gap: 9px;
+            padding: 15px;
+            direction: rtl;
+        }
+        
+        #video-container-container-container > .intro > .icon {
+            width: 37px;
+            
+        }
+        
+        #video-container-container-container > .intro > .title {
+            color: #FFF;
+            text-align: right;
+            font-family: Heebo;
+            font-size: 20px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: normal;            
+        }        
+        
+        #video-container-container-container > .intro > .title > .filename {
+            color: #FFF;
+            text-align: right;
+            font-family: Inter;
+            font-size: 20px;
+            font-style: normal;
+            font-weight: 700;
+            line-height: normal;
+        }
+        
+        body.inspectSize #video-container {
+            display:none;
+        }
+        body:not(.inspectSize) #video-container-container {
+            display:none;
+        }
+        
+        
+        #video-container-container {
+            grid-row: 3;
+            
+            width:50vw;
+        }
+
+        #video-container {
+            grid-row: 3;
+            
+            width:100%;
+            height:100%;
+            position: relative;
+            margin-left: auto;
+            margin-right: auto;
+            contain:size layout paint style;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+        }
+
+        .frame {
+            border-radius:4px;
+            position: absolute;
+            border: 2px solid #0F87E8;
+            opacity: 0;
+            contain:size layout paint style;
+        }
+
+        #interface {
+            overflow:hidden;
+            display: grid;
+            grid-template-columns: 1fr max-content;
+            grid-column-gap: 40px;
+            
+            width:calc(100% - 100px);
+            margin-left:auto;
+            margin-right:auto;
+            
+            border-radius: 10px;
+            border: 1px solid #5B5B5B;
+            
+            background: rgba(40, 40, 40, 0.80);
+            
+            backdrop-filter: blur(12.5px);
+        }
+        
+        #persons-container-container {
+            overflow-y:hidden;
+            padding:15px;
+            
+            display: grid;
+            grid-template-rows: max-content 1fr;
+            grid-row-gap: 15px;
+        }
+        
+        #persons-container-container > .intro {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            justify-content: start;
+            align-content: center;
+            align-items: center;
+            grid-column-gap: 9px;
+            padding: 15px;
+            direction: rtl;
+        }
+        
+        #persons-container-container > .intro > .icon {
+            width: 28px;
+            
+        }
+        
+        #persons-container-container > .intro > .title {
+            color: #FFF;
+            text-align: right;
+            font-family: Heebo;
+            font-size: 20px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: normal;            
+        }
+
+        #persons-container {
+            overflow-y:auto;
+            direction:rtl;
+            padding-top:5px;
+        }
+
+        #persons-container .person {
+            width:200px;
+            height:200px;
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 35px;
+            border-radius: 10px;
+            border: 3px solid rgba(0,0,0,0);
+            box-shadow:0 0 1px 1px #5B5B5B;
+            background: #282828;            
+            cursor:pointer;
+            position:relative;
+        }
+
+        #persons-container .person span:not(:empty) {
+            color: #000;
+            text-align: center;
+            font-family: Heebo;
+            font-size: 16px;
+            font-style: normal;
+            /*font-weight: 700;*/
+            line-height: normal;            
+            
+            position: absolute;
+            left:50%;
+            bottom:-18px;
+            padding:3px 10px;
+            
+            display:block;
+            
+            border-radius: 4px;
+            background: rgb(43 43 43);
+            box-shadow:0 0 1px 1px #5B5B5B;
+            
+            color:white;
+
+            transform:translateX(-50%);
+        }
+        
+        #persons-container .person span.classified:not(:empty) {
+            background:#C8BBBB;
+            color:black;
+        }
+        
+
+        #persons-container .person[classification] {
+            border:3px solid #C8BBBB;
+            box-shadow:none;
+        }
+
+        #persons-container .person.current {
+            border:3px solid #0F87E8;
+            box-shadow:none;
+        }
+
+        #persons-container .person img {
+            width: 200px;
+            height: 200px;
+            object-fit: contain;
+        }
+
+        #persons-container .person:hover img.regular {
+            display:none;
+        }
+        #persons-container .person:not(:hover) img.animated {
+            display:none;
+        }
+
+
+        #classification-container{
+            grid-row:5;
+            text-align:center;
+        }
+
+        #classification-container > div
+        {
+            cursor: pointer;
+            padding: 10px;
+            font-size: 18px;
+            font-family: Inter;
+            display: inline-block;
+            border-radius: 8px;
+            border: 2px solid white;
+            margin: 20px;
+            color:white;
+        }
+
+        #video-controls {
+            grid-row:4;
+            
+            text-align:center;
+        }
+        
+        #video-controls button {
+            margin-left:5px;
+            margin-right:5px;
+            
+            display: inline-flex;
+            padding: 7px 15px;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;            
+            
+            border-radius: 8px;
+            border: 1px solid #5B5B5B;            
+            
+            background:transparent;
+            
+            color: #FFF;
+            text-align: center;
+            font-family: Heebo;
+            font-size: 16px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: normal;
+            
+            cursor:pointer;
+        }
+        
+        #video-controls button:last-child {
+            border-color:rgba(0,0,0,0);
+        }
+
+        #video-container-selector {
+            grid-row:2;
+            margin-bottom:15px;
+            text-align:center;
+        }
+        
+        
+        body.mode_manual_video_tagging #persons-container-container {
+            display:none;
+        }
+        body.mode_public_view_clip #video-container-selector {
+            display:none;
+        }
+        body.mode_public_view_clip #classification-container {
+            display:none;
+        }
+        
+        #header {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            justify-content: center;
+            align-content: center;
+            align-items: center;
+            grid-column-gap: 9px;
+            padding: 15px;            
+        }
+        
+        #header .logo {
+            width:37px;
+        }
+        
+        #header .title {
+            color: #FFF;
+            
+            font-family: League Spartan;
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: 120%; /* 16.8px */
+        }
+        
+        #footer {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            justify-content: center;
+            align-content: center;
+            align-items: center;
+            grid-column-gap: 9px;
+            padding: 15px;            
+            
+            direction:rtl;
+        }
+        
+        #footer .logo {
+            width:19px;
+        }
+        
+        #footer .title {
+            color: #FFF;
+            
+            color: #FFF;
+            font-family: Heebo;
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: 120%; /* 16.8px */            
+        }
+        
+    </style>
+</head>
+<body class="mode_public_view_clip">
+    <div id="header">
+        <svg class="logo" xmlns="http://www.w3.org/2000/svg" width="37" height="26" viewBox="0 0 37 26" fill="none">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M7.8248 3.25H5.00464C3.34778 3.25 2.00464 4.59315 2.00464 6.25V20.9809V22.9809H4.00464H32.9914H34.9914V20.9809V6.25C34.9914 4.59315 33.6482 3.25 31.9914 3.25H28.835C28.8516 3.83053 28.8455 4.50583 28.7943 5.25H31.9914C32.5436 5.25 32.9914 5.69772 32.9914 6.25V20.9809H4.00464V6.25C4.00464 5.69772 4.45236 5.25 5.00464 5.25H7.86558C7.81431 4.50583 7.80823 3.83053 7.8248 3.25Z" fill="white"/>
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M12.7032 24.0742L0 24.0742C0 25.1378 0.862216 26 1.92581 26L35.0742 26C36.1378 26 37 25.1378 37 24.0742L23.9265 24.0742C23.9264 24.5394 23.5492 24.9165 23.084 24.9165L13.5457 24.9165C13.0805 24.9165 12.7033 24.5394 12.7032 24.0742Z" fill="white"/>
+          <mask id="mask0_721_8382" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="9" y="0" width="18" height="20">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M22.5235 2.25891C24.9718 3.25227 26.7998 3.07242 26.7998 3.07242C26.7998 3.07242 27.7024 7.82176 25.3483 12.4906C22.9943 17.1594 18.2843 19.037 18.2843 19.037C18.2843 19.037 13.7187 17.1594 11.3647 12.4906C9.01059 7.82176 9.91319 3.07242 9.91319 3.07242C9.91319 3.07242 11.7412 3.25227 14.1895 2.25891C16.6379 1.26554 18.2843 0 18.2843 0C18.2843 0 20.0751 1.26554 22.5235 2.25891ZM18.315 3.89982L17.7341 4.88181L16.8731 6.33716H15.1511L13.9892 6.33716L14.5808 7.33716L15.4311 8.77456L14.5808 10.2119L13.9892 11.2119H15.1511H16.8731L17.734 12.6673L18.315 13.6493L18.8959 12.6673L19.7569 11.2119H21.4789H22.6408L22.0492 10.2119L21.1989 8.77452L22.0492 7.33716L22.6408 6.33716H21.4789H19.7569L18.896 4.88181L18.315 3.89982ZM18.595 6.33716L18.315 5.86381L18.035 6.33716L18.595 6.33716ZM17.4434 7.33716L19.1866 7.33716L20.037 8.77452L19.1866 10.2119H17.4434L16.593 8.77456L17.4434 7.33716ZM16.2815 7.33716H15.7427L16.0121 7.79256L16.2815 7.33716ZM16.0121 9.75656L15.7427 10.2119H16.2815L16.0121 9.75656ZM18.035 11.2119L18.315 11.6853L18.595 11.2119H18.035ZM20.3485 10.2119H20.8873L20.6179 9.75652L20.3485 10.2119ZM20.6179 7.79253L20.3485 7.33716H20.8873L20.6179 7.79253Z" fill="white"/>
+          </mask>
+          <g mask="url(#mask0_721_8382)">
+            <rect x="18.3562" y="-3.46082" width="16.4667" height="28.1846" fill="white"/>
+          </g>
+          <mask id="mask1_721_8382" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="9" y="0" width="18" height="20">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M14.1896 2.25891C11.7412 3.25227 9.91321 3.07242 9.91321 3.07242C9.91321 3.07242 9.01061 7.82176 11.3647 12.4906C13.7187 17.1594 18.4288 19.037 18.4288 19.037C18.4288 19.037 22.9943 17.1594 25.3484 12.4906C27.7024 7.82176 26.7998 3.07242 26.7998 3.07242C26.7998 3.07242 24.9718 3.25227 22.5235 2.25891C20.0751 1.26554 18.4288 0 18.4288 0C18.4288 0 16.6379 1.26554 14.1896 2.25891ZM18.3151 3.89982L18.8961 4.88181L19.757 6.33716H21.479L22.6409 6.33716L22.0493 7.33716L21.199 8.77451L22.0493 10.2119L22.6409 11.2119H21.479H19.757L18.896 12.6673L18.3151 13.6493L17.7341 12.6673L16.8732 11.2119H15.1512H13.9893L14.5809 10.2119L15.4312 8.77458L14.5809 7.33716L13.9893 6.33716H15.1512H16.8732L17.7342 4.88181L18.3151 3.89982ZM18.0351 6.33716L18.3151 5.86381L18.5951 6.33716L18.0351 6.33716ZM19.1867 7.33716L17.4435 7.33716L16.5931 8.77458L17.4434 10.2119H19.1867L20.0371 8.77451L19.1867 7.33716ZM20.3486 7.33716H20.8874L20.618 7.79251L20.3486 7.33716ZM20.618 9.7565L20.8874 10.2119H20.3486L20.618 9.7565ZM18.5951 11.2119L18.3151 11.6853L18.035 11.2119H18.5951ZM16.2816 10.2119H15.7428L16.0122 9.75657L16.2816 10.2119ZM16.0122 7.79258L16.2816 7.33716H15.7428L16.0122 7.79258Z" fill="white"/>
+          </mask>
+          <g mask="url(#mask1_721_8382)">
+            <rect width="16.4667" height="28.1846" transform="matrix(-1 0 0 1 18.3563 -3.46082)" fill="white"/>
+          </g>
+        </svg>       
+        <div class="title">
+            Israel Tech Guard
+        </div>
+    </div>        
+    <div id="interface">
+        <div id="persons-container-container">
+            <div class="intro">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
+  <path d="M19 20C19 18.9391 18.4732 17.9217 17.5355 17.1716C16.5979 16.4214 15.3261 16 14 16C12.6739 16 11.4021 16.4214 10.4645 17.1716C9.52678 17.9217 9 18.9391 9 20" stroke="white"/>
+  <circle cx="14" cy="11" r="3.5" stroke="white"/>
+  <rect x="0.5" y="0.5" width="27" height="27" rx="13.5" stroke="white"/>
+</svg>
+                <div class="title">
+                    פנים שזוהו
+                </div>
+            </div>
+            <div id="persons-container">
+            </div>
+        </div>
+        <div id="video-container-container-container">
+            <div class="intro">
+<svg class="icon" xmlns="http://www.w3.org/2000/svg" width="37" height="28" viewBox="0 0 37 28" fill="none">
+  <path d="M11.75 14.433C11.4167 14.2406 11.4167 13.7594 11.75 13.567L20.75 8.37083C21.0833 8.17838 21.5 8.41895 21.5 8.80385L21.5 19.1962C21.5 19.5811 21.0833 19.8216 20.75 19.6292L11.75 14.433Z" stroke="white"/>
+  <rect x="0.5" y="0.5" width="36" height="27" rx="9.5" stroke="white"/>
+</svg>                
+                <div class="title">
+                    שם קובץ:
+                    <span class="filename">
+                        masdasdasd
+                    </span>
+                </div>
+            </div>
+            <div id="video-container-selector">
+                <select></select>
+            </div>
+            <div id="video-container">
+                <video id="video" controls autoplay muted loop>
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <div id="video-container-container">
+            </div>
+            <div id="video-controls">
+                <button onclick="changeSpeed(1.5)">מהר</button>
+                <button onclick="changeSpeed(1.0)">מהירות רגילה</button>
+                <button onclick="changeSpeed(0.5)">לאט</button>
+                <button onclick="download()">הורדה</button>
+            </div>
+            <div id="classification-container">
+            </div>
+        </div>
+    </div>
+    <div id="footer">
+<svg class="logo" xmlns="http://www.w3.org/2000/svg" width="19" height="18" viewBox="0 0 19 18" fill="none">
+  <path d="M8.21912 3.06258C8.80368 2.10339 10.1963 2.10339 10.7809 3.06258L15.4471 10.7194C16.0563 11.719 15.3368 13 14.1663 13H4.83375C3.66318 13 2.9437 11.719 3.55286 10.7194L8.21912 3.06258Z" stroke="white"/>
+  <path d="M9.12402 9.00391L9.00131 5.35304H9.97902L9.85631 9.00391H9.12402ZM9.48818 10.9565C9.36943 10.9565 9.25992 10.9265 9.15964 10.8665C9.05936 10.8091 8.9802 10.7322 8.92214 10.6357C8.86409 10.5365 8.83506 10.4283 8.83506 10.3109C8.83506 10.1909 8.86409 10.0826 8.92214 9.98609C8.9802 9.88956 9.05936 9.81261 9.15964 9.75522C9.25992 9.69522 9.36943 9.66522 9.48818 9.66522C9.60693 9.66522 9.71513 9.69522 9.81277 9.75522C9.91304 9.81261 9.99221 9.88956 10.0503 9.98609C10.1083 10.0826 10.1373 10.1909 10.1373 10.3109C10.1373 10.4283 10.1083 10.5365 10.0503 10.6357C9.99221 10.7322 9.91304 10.8091 9.81277 10.8665C9.71513 10.9265 9.60693 10.9565 9.48818 10.9565Z" fill="white"/>
+</svg>        
+              
+        <div class="title">
+            אזהרת תוכן קשה לצפייה
+        </div>        
+    </div>
+    <script src="./transformJSON.js"></script>
+    <script
+            src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    
+    <script>
+        var mode = "public_view_clip";
+        
+        var classificationOptions = {};
+        if ( ["manual_person_tagging","manual_person_tagging_dev"].includes(mode) ) {
+            classificationOptions = {"TERRORIST":"מחבל","SOLDIER":"חייל","ISRAELI_CIVILIAN":"אזרח ישראלי","PALESTINIAN_CIVILIAN":"אזרח פלסטיני","INVALID":"זיהוי לא תקין"}; 
+        }
+        if ( ["manual_video_tagging"].includes(mode) ) {
+            classificationOptions = {
+                "VALID":"תקין",
+                "INVALID":"לא תקין"
+            };
+        }
+        
+        for ( var value in classificationOptions ) {
+            var div = $("<div></div>");
+            div.text(classificationOptions[value]);
+            div.data("value",value);
+            $("#classification-container").append(div);
+        }
+        
+        
+    
+        const fileList = ["1. 8 year old child bullied after being kidnapped into Gaza","10000000_327523746482860_7359038741796643010_n","2. No subtitles Mother with her 2 children kidnapped to Gaza","2_5262881602567943725","384407400_192750913774372_5403366307963290249_n","385873121_2234631980065606_5437115867920910360_n","386955277_1365945064274527_4771478666154983421_n","387756390_690873669581354_7234881057023127750_n","387759514_3584530055194791_2252383714252422392_n","387822390_697114965605427_8770143965212199041_n","4_5839116761714134882 (1)","4_5839200874353660103","A couple youngsters hijacked into Gaza","Bodies on the road and in an orchard","Captive family led to captivity in Gaza","Citizens in unknown condition kidnapped to Gaza","Dead soldiers in a military post","Desecration of dead girl hijacked to Gaza","Elderly woman forced to pose for camera","Families led to captivity in Gaza","Girls being hijacked into Gaza","Hamas burning houses to force families out for captivity or murder","Hamas terrorists mauling a young woman dead body on their way to Gaza","Hamas terrorists shooting at civilian houses and taking senior citizens as hostages","Hijacked young woman in Gaza","IMG_4515","IMG_4551","IMG_4807","IMG_9296","Israeli citizens feeling a festival upon Hammas shooting (200 dead)","Israeli citizens who escaped the butchering in the festival hiding in a trash can","Israeli soldiers being dragged from a tank","Military base takeover and massacring soldiers","Missile hit in parking lot","Noa, the famous captive being held in captivity","Shooting in the city","Sick, elderly woman hijacked into Gaza, smiling to show how strong she is","Terrified children with Hamas terrorists in their home","Thai national brutally beaten and murdered by Hamas terrorists","Thai national kidnapped into Gaza","Three youngsters kidnapped in a truck to Gaza","VID-20231007-WA0110","VID-20231009-WA0005","VIDEO-2023-10-07-10-47-08","VIDEO-2023-10-07-10-48-47","VIDEO-2023-10-07-12-58-38","Vehicle in Gaza with kidnapped soldiers ","Whole family kidnapped to Gaza","Wounded Thai national hijacked into Gaza","Wounded and dead Israeli soldiers in a pile","Young israeli citizen probably murdered during the festival massacre","Youngsters abused and hijacked","Youngsters fleeing from a nearby party","Youngsters who survived fleeing while bullets fly over their heads","Youngsters, some wounded or dead, hijacked into Gaza","b51df438-0a03-4bac-9af9-8fc3fb4ec276","image (1)","vid-00001","vid-00002","vid-00003","video5841638994143613693","video5843545852248854733","video_2023-10-07_15-07-39","video_2023-10-07_15-08-15","video_2023-10-07_15-08-57 (1)","video_2023-10-07_15-09-42","video_2023-10-07_15-10-21","video_2023-10-07_15-10-30","video_2023-10-07_15-10-52","video_2023-10-07_15-11-21","video_2023-10-07_15-11-42","video_2023-10-07_15-11-48","video_2023-10-07_15-13-00","video_2023-10-07_15-14-18"];
+        if ( ["manual_person_tagging","manual_person_tagging_dev","manual_video_tagging"].includes(mode) ) {
+            // Function to populate the <select> element
+            function populateSelect() {
+                const selectElement = $('#video-container-selector select');
+        
+                $.each(fileList, function(index, value) {
+                    selectElement.append($('<option>', {
+                        value: value,
+                        text: value
+                    }));
+                });
+            }
+        
+            // Call the populateSelect function to populate the <select> element
+            populateSelect();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedVideo = urlParams.get("video");
+        
+            // Set the selected option in the <select> based on the "video" query parameter
+            $('#video-container-selector select').val(selectedVideo.split("/")[0]);
+        
+            // Event handling for the change event
+            $('#video-container-selector select').on('change', function() {
+                const selectedFile = $(this).val();
+        
+                // Get the current page URL
+                const currentUrl = window.location.href;
+        
+                // Create a URL object to manipulate the query parameters
+                const url = new URL(currentUrl);
+        
+                // Set the new "video" query parameter based on the selectedFile
+                url.searchParams.set('video', selectedFile);
+        
+                // Redirect to the modified URL
+                window.location.href = url.toString();
+            });
+        }
+    
+        const video = document.getElementById('video');
+    
+        function changeSpeed(speed) {
+            video.playbackRate = speed;
+        }
+    
+        function download() {
+            window.location.href = reallyAllData.video_url;
+        }
+        
+        if ( typeof(transformJSON) == "undefined" )
+            transformJSON = function(json) {
+                return new Promise((resolve, reject) => {
+                    resolve(json);
+                });
+            };
+        
+        
+        //
+        
+        
+        var reallyAllData = {"id":"a6fd835d-964f-4feb-ab81-dbbd1fae3bf5","title":"A couple youngsters hijacked into Gaza","version":"v0004","createdAt":"2023-10-13T22:33:59.745Z","lastUpdatedAt":"2023-10-13T22:33:59.745Z","sourceCreationDate":"2023-10-13T22:33:49.000Z","status":"UNPROCESSED","video_url":"https://face-shame-proj.s3.il-central-1.amazonaws.com/source-vid/A%20couple%20youngsters%20hijacked%20into%20Gaza.MP4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=58e4cfaa966fd900cdd456b32002d1e3346cd6516a83610af9b7a8ff7b3d6890&X-Amz-SignedHeaders=host&x-id=GetObject","output_url":"output-img/A couple youngsters hijacked into Gaza/v0004/","video_fps":30,"video_height":722,"video_width":1280,"persons":{"2":{"personId":"d7b4a107-55cb-43c8-a91f-77a916c4efe4","rects":{"37":{"top":406,"left":354,"right":421,"bottom":312},"38":{"top":405,"left":362,"right":432,"bottom":309},"39":{"top":401,"left":375,"right":443,"bottom":303},"58":{"top":435,"left":417,"right":502,"bottom":317},"59":{"top":450,"left":421,"right":506,"bottom":328},"60":{"top":465,"left":422,"right":512,"bottom":339},"61":{"top":475,"left":425,"right":516,"bottom":345},"62":{"top":481,"left":426,"right":519,"bottom":348},"63":{"top":482,"left":429,"right":522,"bottom":347},"64":{"top":478,"left":431,"right":526,"bottom":345},"65":{"top":478,"left":430,"right":526,"bottom":342},"66":{"top":478,"left":432,"right":529,"bottom":338},"67":{"top":476,"left":430,"right":529,"bottom":338},"68":{"top":478,"left":429,"right":527,"bottom":334},"69":{"top":471,"left":429,"right":528,"bottom":333},"70":{"top":466,"left":428,"right":527,"bottom":326},"71":{"top":457,"left":429,"right":529,"bottom":318},"72":{"top":449,"left":427,"right":529,"bottom":307},"73":{"top":444,"left":425,"right":530,"bottom":302},"74":{"top":445,"left":423,"right":527,"bottom":298},"75":{"top":451,"left":417,"right":522,"bottom":296},"76":{"top":459,"left":409,"right":517,"bottom":300},"77":{"top":472,"left":403,"right":512,"bottom":312},"78":{"top":495,"left":396,"right":508,"bottom":327},"79":{"top":516,"left":385,"right":501,"bottom":345},"80":{"top":529,"left":383,"right":498,"bottom":364},"81":{"top":535,"left":377,"right":494,"bottom":369},"82":{"top":532,"left":375,"right":495,"bottom":369},"83":{"top":526,"left":379,"right":495,"bottom":364},"84":{"top":524,"left":377,"right":500,"bottom":355},"85":{"top":520,"left":379,"right":511,"bottom":350},"86":{"top":522,"left":383,"right":519,"bottom":344},"87":{"top":518,"left":395,"right":529,"bottom":340},"88":{"top":516,"left":401,"right":542,"bottom":338},"89":{"top":516,"left":415,"right":552,"bottom":340},"90":{"top":519,"left":426,"right":564,"bottom":336},"91":{"top":523,"left":438,"right":580,"bottom":337},"92":{"top":530,"left":452,"right":597,"bottom":340},"93":{"top":543,"left":462,"right":610,"bottom":342},"94":{"top":561,"left":471,"right":625,"bottom":347},"95":{"top":579,"left":479,"right":636,"bottom":364},"96":{"top":604,"left":485,"right":647,"bottom":379},"97":{"top":626,"left":492,"right":655,"bottom":392},"98":{"top":631,"left":500,"right":664,"bottom":400},"99":{"top":632,"left":505,"right":675,"bottom":396},"100":{"top":621,"left":512,"right":683,"bottom":384},"101":{"top":601,"left":518,"right":686,"bottom":364},"102":{"top":590,"left":522,"right":691,"bottom":346},"103":{"top":597,"left":521,"right":694,"bottom":336},"104":{"top":600,"left":523,"right":697,"bottom":337},"105":{"top":602,"left":529,"right":701,"bottom":336},"106":{"top":597,"left":532,"right":704,"bottom":340},"107":{"top":589,"left":539,"right":700,"bottom":340},"108":{"top":575,"left":534,"right":690,"bottom":326},"109":{"top":557,"left":514,"right":673,"bottom":317},"110":{"top":538,"left":495,"right":651,"bottom":300},"111":{"top":518,"left":473,"right":632,"bottom":278},"112":{"top":493,"left":459,"right":613,"bottom":256},"113":{"top":471,"left":443,"right":595,"bottom":239},"114":{"top":441,"left":428,"right":577,"bottom":219},"115":{"top":420,"left":411,"right":562,"bottom":202},"116":{"top":397,"left":406,"right":550,"bottom":187},"117":{"top":371,"left":403,"right":541,"bottom":168},"118":{"top":355,"left":407,"right":539,"bottom":155},"119":{"top":340,"left":416,"right":550,"bottom":144},"122":{"top":331,"left":472,"right":590,"bottom":140},"123":{"top":327,"left":489,"right":608,"bottom":142},"126":{"top":332,"left":540,"right":647,"bottom":168},"127":{"top":338,"left":544,"right":647,"bottom":181},"128":{"top":344,"left":544,"right":642,"bottom":196},"129":{"top":353,"left":535,"right":631,"bottom":209},"130":{"top":366,"left":524,"right":612,"bottom":228},"131":{"top":377,"left":506,"right":592,"bottom":242},"132":{"top":387,"left":477,"right":563,"bottom":251},"133":{"top":385,"left":443,"right":524,"bottom":250},"134":{"top":375,"left":405,"right":483,"bottom":242},"135":{"top":344,"left":363,"right":445,"bottom":227},"136":{"top":320,"left":325,"right":404,"bottom":199},"137":{"top":265,"left":286,"right":351,"bottom":172}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_2/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=32d9be9f3bba290aef78932992bf5bf8b3262e3bbb5b52a174c14c95b2843f4f&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_2/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=252046e7e0725a4eaaf4b61f03086500149d6f0794467b23948ea36704932a8f&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"ISRAELI_CIVILIAN"},"3":{"personId":"d0d9dbe7-216f-4d86-a7c0-c0c959a90419","rects":{"42":{"top":680,"left":-41,"right":64,"bottom":494},"43":{"top":496,"left":-19,"right":171,"bottom":213},"60":{"top":517,"left":8,"right":188,"bottom":239},"61":{"top":523,"left":11,"right":202,"bottom":243},"62":{"top":522,"left":-8,"right":191,"bottom":241},"63":{"top":525,"left":-6,"right":204,"bottom":228},"76":{"top":468,"left":23,"right":166,"bottom":158},"77":{"top":492,"left":24,"right":169,"bottom":156},"78":{"top":498,"left":-4,"right":153,"bottom":150},"79":{"top":501,"left":-46,"right":139,"bottom":151}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_3/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=88ca3edf4d92c764308c2a095e02b7b67cf1bf7e9889fbace35b6b0d3a48bdff&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_3/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=b5d2f2715be9ce9d7da17140f3c8a3e2796d752b734c4c565be5dd0e351acbb1&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"TERRORIST"},"4":{"personId":"df10843e-c6fc-44a7-952b-646e857f349a","rects":{"39":{"top":519,"left":433,"right":535,"bottom":390},"40":{"top":514,"left":433,"right":538,"bottom":388},"41":{"top":507,"left":433,"right":535,"bottom":386},"42":{"top":505,"left":433,"right":537,"bottom":376},"47":{"top":483,"left":421,"right":520,"bottom":346},"48":{"top":484,"left":423,"right":520,"bottom":349},"49":{"top":491,"left":411,"right":528,"bottom":348},"50":{"top":498,"left":427,"right":545,"bottom":360},"52":{"top":524,"left":461,"right":589,"bottom":369},"57":{"top":618,"left":562,"right":692,"bottom":450},"58":{"top":631,"left":584,"right":712,"bottom":468},"59":{"top":646,"left":607,"right":731,"bottom":480},"60":{"top":661,"left":629,"right":756,"bottom":493},"61":{"top":664,"left":650,"right":777,"bottom":501},"62":{"top":666,"left":671,"right":797,"bottom":503},"63":{"top":665,"left":684,"right":812,"bottom":500},"64":{"top":662,"left":689,"right":823,"bottom":499},"65":{"top":672,"left":690,"right":833,"bottom":492},"66":{"top":668,"left":690,"right":832,"bottom":491},"67":{"top":668,"left":689,"right":832,"bottom":481},"68":{"top":665,"left":685,"right":833,"bottom":471},"76":{"top":673,"left":694,"right":848,"bottom":473},"77":{"top":704,"left":694,"right":850,"bottom":493},"78":{"top":727,"left":697,"right":852,"bottom":520},"109":{"top":647,"left":1084,"right":1195,"bottom":451},"110":{"top":611,"left":1050,"right":1152,"bottom":418},"111":{"top":596,"left":1003,"right":1111,"bottom":387},"112":{"top":546,"left":960,"right":1062,"bottom":368},"113":{"top":512,"left":934,"right":1024,"bottom":351},"114":{"top":482,"left":899,"right":987,"bottom":334},"118":{"top":359,"left":401,"right":546,"bottom":150},"119":{"top":344,"left":410,"right":555,"bottom":145},"121":{"top":335,"left":447,"right":570,"bottom":132},"122":{"top":333,"left":473,"right":591,"bottom":137},"123":{"top":331,"left":491,"right":607,"bottom":140},"124":{"top":332,"left":511,"right":626,"bottom":151},"125":{"top":335,"left":528,"right":641,"bottom":158},"126":{"top":335,"left":536,"right":647,"bottom":166},"129":{"top":354,"left":536,"right":629,"bottom":212},"130":{"top":367,"left":523,"right":611,"bottom":230},"131":{"top":377,"left":513,"right":591,"bottom":251}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_4/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=4076a67ae8b19c2fcf769771c1ba44d51e5dad99f31e344880655a26752a549a&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_4/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=a92acbc6eb53549e5f2868c4ab22ef6203ad51b26985273775a18d985668c404&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"INVALID"},"14":{"personId":"a03bd6bb-59f8-4351-bd85-d1758263f975","rects":{"163":{"top":389,"left":737,"right":778,"bottom":346},"166":{"top":410,"left":668,"right":703,"bottom":368},"215":{"top":542,"left":830,"right":892,"bottom":463},"224":{"top":451,"left":765,"right":820,"bottom":383},"231":{"top":439,"left":708,"right":766,"bottom":363},"232":{"top":429,"left":702,"right":757,"bottom":356},"251":{"top":322,"left":662,"right":728,"bottom":241},"252":{"top":322,"left":658,"right":731,"bottom":233},"256":{"top":286,"left":680,"right":745,"bottom":201},"257":{"top":286,"left":687,"right":751,"bottom":194},"258":{"top":281,"left":696,"right":764,"bottom":193},"259":{"top":284,"left":702,"right":768,"bottom":193},"263":{"top":298,"left":716,"right":787,"bottom":201},"264":{"top":300,"left":712,"right":778,"bottom":216},"277":{"top":381,"left":615,"right":685,"bottom":283},"281":{"top":405,"left":578,"right":650,"bottom":303},"294":{"top":237,"left":369,"right":450,"bottom":125},"297":{"top":467,"left":468,"right":559,"bottom":338},"298":{"top":481,"left":478,"right":567,"bottom":354},"300":{"top":340,"left":466,"right":548,"bottom":226},"306":{"top":398,"left":500,"right":588,"bottom":274},"307":{"top":408,"left":501,"right":589,"bottom":288},"308":{"top":418,"left":499,"right":590,"bottom":287},"326":{"top":559,"left":595,"right":713,"bottom":419},"327":{"top":511,"left":542,"right":599,"bottom":439},"329":{"top":540,"left":606,"right":725,"bottom":403},"330":{"top":537,"left":605,"right":727,"bottom":391},"332":{"top":512,"left":604,"right":713,"bottom":365},"334":{"top":501,"left":607,"right":732,"bottom":356},"336":{"top":492,"left":626,"right":744,"bottom":333},"337":{"top":481,"left":638,"right":764,"bottom":322},"338":{"top":474,"left":648,"right":771,"bottom":317},"339":{"top":471,"left":668,"right":800,"bottom":304},"340":{"top":478,"left":675,"right":831,"bottom":283},"341":{"top":469,"left":694,"right":827,"bottom":281},"342":{"top":461,"left":701,"right":842,"bottom":272},"343":{"top":452,"left":705,"right":847,"bottom":257},"344":{"top":436,"left":714,"right":857,"bottom":242},"345":{"top":418,"left":715,"right":866,"bottom":224},"346":{"top":400,"left":715,"right":859,"bottom":187},"347":{"top":372,"left":720,"right":875,"bottom":145},"348":{"top":339,"left":721,"right":870,"bottom":114},"349":{"top":311,"left":725,"right":872,"bottom":115},"350":{"top":307,"left":726,"right":886,"bottom":85},"353":{"top":320,"left":704,"right":882,"bottom":66},"354":{"top":338,"left":687,"right":864,"bottom":70},"355":{"top":339,"left":687,"right":849,"bottom":111},"356":{"top":336,"left":682,"right":846,"bottom":104},"357":{"top":328,"left":677,"right":835,"bottom":90},"358":{"top":311,"left":670,"right":845,"bottom":71},"359":{"top":296,"left":679,"right":859,"bottom":36},"360":{"top":287,"left":703,"right":888,"bottom":18},"361":{"top":297,"left":715,"right":927,"bottom":4},"368":{"top":123,"left":708,"right":839,"bottom":-99},"369":{"top":134,"left":716,"right":855,"bottom":-99},"371":{"top":158,"left":740,"right":896,"bottom":-100},"374":{"top":137,"left":793,"right":935,"bottom":-91},"388":{"top":316,"left":732,"right":818,"bottom":146},"390":{"top":479,"left":664,"right":845,"bottom":184},"391":{"top":516,"left":532,"right":728,"bottom":203}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_14/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=ada610babafc8bed87d77df0325d5e9af7a22e9574d27831e043fe9a83c94a45&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_14/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=8c6d5abce3abddd03f39849f6f97f1c9a52a1c269f9d48d8ec37b8dfd387d9da&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"INVALID"},"16":{"personId":"c39a1b1a-68aa-4b4b-8b8e-b4e87b94aa40","rects":{"165":{"top":402,"left":856,"right":897,"bottom":356},"171":{"top":344,"left":839,"right":881,"bottom":297},"172":{"top":339,"left":842,"right":884,"bottom":293},"173":{"top":343,"left":844,"right":885,"bottom":297},"174":{"top":347,"left":845,"right":886,"bottom":303},"180":{"top":386,"left":829,"right":876,"bottom":338},"181":{"top":385,"left":827,"right":871,"bottom":340},"182":{"top":385,"left":827,"right":869,"bottom":340},"183":{"top":388,"left":827,"right":870,"bottom":344},"184":{"top":389,"left":829,"right":870,"bottom":347},"209":{"top":461,"left":1080,"right":1118,"bottom":421},"210":{"top":461,"left":1090,"right":1127,"bottom":421},"211":{"top":464,"left":1098,"right":1138,"bottom":422},"212":{"top":467,"left":1105,"right":1143,"bottom":427},"213":{"top":469,"left":1113,"right":1153,"bottom":429},"214":{"top":474,"left":1119,"right":1158,"bottom":432},"215":{"top":474,"left":1122,"right":1162,"bottom":432},"216":{"top":471,"left":1123,"right":1160,"bottom":431},"217":{"top":468,"left":1122,"right":1160,"bottom":428},"218":{"top":462,"left":1122,"right":1160,"bottom":420},"219":{"top":455,"left":1121,"right":1160,"bottom":413},"220":{"top":443,"left":1120,"right":1154,"bottom":406},"221":{"top":433,"left":1119,"right":1153,"bottom":394},"222":{"top":424,"left":1119,"right":1156,"bottom":385},"223":{"top":417,"left":1117,"right":1154,"bottom":378},"281":{"top":347,"left":895,"right":935,"bottom":305},"282":{"top":356,"left":880,"right":923,"bottom":311},"284":{"top":353,"left":855,"right":900,"bottom":301},"285":{"top":350,"left":847,"right":888,"bottom":307},"286":{"top":341,"left":839,"right":882,"bottom":298},"289":{"top":339,"left":816,"right":860,"bottom":290},"290":{"top":338,"left":812,"right":854,"bottom":286},"292":{"top":342,"left":810,"right":851,"bottom":289},"293":{"top":341,"left":815,"right":854,"bottom":293},"294":{"top":343,"left":820,"right":859,"bottom":294},"295":{"top":349,"left":829,"right":866,"bottom":300},"296":{"top":355,"left":839,"right":876,"bottom":309},"297":{"top":365,"left":848,"right":887,"bottom":318},"298":{"top":375,"left":859,"right":897,"bottom":328},"299":{"top":388,"left":869,"right":907,"bottom":340},"300":{"top":403,"left":881,"right":923,"bottom":353},"301":{"top":419,"left":889,"right":931,"bottom":370},"302":{"top":438,"left":893,"right":934,"bottom":388},"303":{"top":455,"left":896,"right":938,"bottom":405},"304":{"top":471,"left":896,"right":938,"bottom":419},"305":{"top":483,"left":895,"right":937,"bottom":429},"306":{"top":493,"left":894,"right":936,"bottom":439},"307":{"top":502,"left":894,"right":940,"bottom":446},"308":{"top":507,"left":895,"right":937,"bottom":452},"309":{"top":510,"left":894,"right":937,"bottom":457},"310":{"top":511,"left":896,"right":939,"bottom":458},"311":{"top":513,"left":897,"right":941,"bottom":459},"312":{"top":513,"left":898,"right":943,"bottom":457},"313":{"top":512,"left":898,"right":943,"bottom":457},"314":{"top":513,"left":897,"right":942,"bottom":457},"315":{"top":515,"left":895,"right":941,"bottom":459},"316":{"top":513,"left":893,"right":935,"bottom":463},"317":{"top":518,"left":886,"right":930,"bottom":467},"318":{"top":522,"left":884,"right":929,"bottom":470},"319":{"top":523,"left":881,"right":927,"bottom":470},"320":{"top":520,"left":878,"right":924,"bottom":467},"321":{"top":515,"left":878,"right":922,"bottom":460},"322":{"top":511,"left":873,"right":920,"bottom":454},"330":{"top":404,"left":849,"right":894,"bottom":356}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_16/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=6ecf9d0fb0b647f815c51ef37d37283e9a0d895435698b6f47819508afd6ad99&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_16/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=80f82e82a2d75722562bac8119d1a3377ee6b258eeb2236d4c2fbc9d2b164848&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"TERRORIST"},"17":{"personId":"f401ea53-8c2e-4e1d-a9f4-13b9ce05139a","rects":{"167":{"top":375,"left":473,"right":516,"bottom":325},"168":{"top":370,"left":461,"right":505,"bottom":314},"170":{"top":348,"left":442,"right":488,"bottom":292},"174":{"top":346,"left":422,"right":468,"bottom":289},"175":{"top":349,"left":416,"right":463,"bottom":295},"176":{"top":357,"left":408,"right":454,"bottom":304},"177":{"top":372,"left":399,"right":447,"bottom":313},"178":{"top":375,"left":390,"right":437,"bottom":319},"180":{"top":393,"left":373,"right":421,"bottom":331},"181":{"top":395,"left":365,"right":415,"bottom":331},"182":{"top":395,"left":355,"right":405,"bottom":332},"183":{"top":400,"left":342,"right":397,"bottom":330},"184":{"top":396,"left":337,"right":388,"bottom":332},"185":{"top":396,"left":330,"right":382,"bottom":333},"186":{"top":401,"left":327,"right":378,"bottom":338},"187":{"top":407,"left":331,"right":382,"bottom":344},"188":{"top":416,"left":329,"right":381,"bottom":350},"189":{"top":426,"left":330,"right":383,"bottom":360},"190":{"top":436,"left":336,"right":387,"bottom":369},"191":{"top":446,"left":342,"right":394,"bottom":380},"192":{"top":457,"left":353,"right":405,"bottom":387},"193":{"top":466,"left":366,"right":419,"bottom":392},"194":{"top":466,"left":378,"right":430,"bottom":395},"195":{"top":471,"left":393,"right":446,"bottom":395},"196":{"top":465,"left":407,"right":460,"bottom":394},"197":{"top":463,"left":421,"right":476,"bottom":392},"198":{"top":459,"left":436,"right":489,"bottom":388},"199":{"top":456,"left":449,"right":503,"bottom":383},"200":{"top":453,"left":462,"right":518,"bottom":381},"201":{"top":452,"left":473,"right":528,"bottom":379},"202":{"top":454,"left":483,"right":539,"bottom":379},"203":{"top":451,"left":489,"right":547,"bottom":378},"204":{"top":449,"left":498,"right":555,"bottom":375},"205":{"top":447,"left":505,"right":562,"bottom":370},"206":{"top":442,"left":511,"right":567,"bottom":363},"207":{"top":435,"left":519,"right":574,"bottom":355},"208":{"top":424,"left":527,"right":580,"bottom":346},"209":{"top":410,"left":535,"right":586,"bottom":339},"210":{"top":407,"left":541,"right":591,"bottom":331},"211":{"top":404,"left":547,"right":597,"bottom":328},"212":{"top":400,"left":553,"right":602,"bottom":326},"213":{"top":396,"left":558,"right":605,"bottom":328},"214":{"top":401,"left":562,"right":608,"bottom":331},"215":{"top":406,"left":567,"right":612,"bottom":336},"216":{"top":409,"left":568,"right":612,"bottom":340},"217":{"top":413,"left":564,"right":612,"bottom":336},"218":{"top":407,"left":564,"right":612,"bottom":333},"219":{"top":399,"left":564,"right":609,"bottom":330},"220":{"top":384,"left":566,"right":610,"bottom":322},"221":{"top":380,"left":565,"right":612,"bottom":309},"222":{"top":377,"left":562,"right":615,"bottom":299},"223":{"top":372,"left":565,"right":619,"bottom":295},"224":{"top":368,"left":566,"right":620,"bottom":292},"225":{"top":364,"left":569,"right":622,"bottom":288},"226":{"top":365,"left":572,"right":625,"bottom":290},"227":{"top":366,"left":572,"right":626,"bottom":292},"228":{"top":367,"left":573,"right":627,"bottom":291},"229":{"top":366,"left":576,"right":628,"bottom":289},"230":{"top":362,"left":577,"right":628,"bottom":285},"231":{"top":354,"left":576,"right":627,"bottom":277},"232":{"top":343,"left":577,"right":628,"bottom":268},"233":{"top":328,"left":578,"right":629,"bottom":254},"234":{"top":312,"left":580,"right":630,"bottom":237},"235":{"top":298,"left":582,"right":632,"bottom":222},"236":{"top":285,"left":584,"right":634,"bottom":210},"237":{"top":265,"left":585,"right":635,"bottom":199},"238":{"top":256,"left":586,"right":636,"bottom":191},"239":{"top":252,"left":586,"right":636,"bottom":187},"240":{"top":252,"left":587,"right":636,"bottom":188},"241":{"top":253,"left":587,"right":635,"bottom":185},"242":{"top":256,"left":583,"right":632,"bottom":185},"243":{"top":253,"left":583,"right":630,"bottom":184},"244":{"top":250,"left":579,"right":626,"bottom":179},"245":{"top":245,"left":572,"right":619,"bottom":169},"247":{"top":218,"left":566,"right":614,"bottom":142},"248":{"top":203,"left":565,"right":612,"bottom":130},"249":{"top":190,"left":561,"right":609,"bottom":117},"250":{"top":178,"left":560,"right":607,"bottom":106},"251":{"top":174,"left":555,"right":605,"bottom":99},"252":{"top":173,"left":552,"right":602,"bottom":97},"253":{"top":178,"left":547,"right":599,"bottom":94},"254":{"top":175,"left":544,"right":596,"bottom":95},"255":{"top":182,"left":539,"right":592,"bottom":98},"256":{"top":191,"left":537,"right":590,"bottom":102},"257":{"top":196,"left":532,"right":587,"bottom":107},"258":{"top":195,"left":533,"right":586,"bottom":113},"259":{"top":196,"left":534,"right":584,"bottom":114},"260":{"top":190,"left":531,"right":582,"bottom":110},"261":{"top":186,"left":529,"right":579,"bottom":103},"262":{"top":179,"left":528,"right":582,"bottom":98},"263":{"top":183,"left":529,"right":582,"bottom":96},"264":{"top":177,"left":530,"right":583,"bottom":98},"265":{"top":183,"left":527,"right":580,"bottom":100},"266":{"top":190,"left":528,"right":580,"bottom":111},"267":{"top":198,"left":531,"right":583,"bottom":124},"268":{"top":213,"left":527,"right":581,"bottom":132},"269":{"top":232,"left":525,"right":577,"bottom":145},"270":{"top":237,"left":524,"right":572,"bottom":158},"271":{"top":241,"left":519,"right":568,"bottom":169},"272":{"top":252,"left":517,"right":565,"bottom":177},"273":{"top":254,"left":511,"right":559,"bottom":181},"274":{"top":261,"left":504,"right":554,"bottom":183},"275":{"top":266,"left":497,"right":549,"bottom":183},"276":{"top":269,"left":489,"right":545,"bottom":182},"277":{"top":271,"left":481,"right":539,"bottom":183},"278":{"top":271,"left":473,"right":531,"bottom":180},"279":{"top":270,"left":461,"right":521,"bottom":178},"280":{"top":267,"left":449,"right":510,"bottom":174},"281":{"top":267,"left":435,"right":494,"bottom":170},"282":{"top":271,"left":422,"right":483,"bottom":171},"283":{"top":272,"left":407,"right":469,"bottom":173},"284":{"top":273,"left":392,"right":456,"bottom":171},"285":{"top":268,"left":376,"right":446,"bottom":164},"286":{"top":263,"left":368,"right":441,"bottom":155},"287":{"top":250,"left":360,"right":437,"bottom":145},"288":{"top":228,"left":357,"right":434,"bottom":134},"289":{"top":221,"left":353,"right":432,"bottom":124},"290":{"top":212,"left":354,"right":432,"bottom":115},"291":{"top":210,"left":353,"right":433,"bottom":112},"292":{"top":213,"left":356,"right":434,"bottom":114},"293":{"top":224,"left":362,"right":441,"bottom":122},"294":{"top":238,"left":370,"right":449,"bottom":132},"295":{"top":257,"left":381,"right":462,"bottom":151},"296":{"top":277,"left":396,"right":477,"bottom":173},"297":{"top":297,"left":411,"right":494,"bottom":189},"299":{"top":330,"left":448,"right":535,"bottom":215},"302":{"top":362,"left":487,"right":571,"bottom":247},"303":{"top":374,"left":492,"right":576,"bottom":257},"304":{"top":383,"left":496,"right":581,"bottom":264},"305":{"top":390,"left":498,"right":586,"bottom":269},"306":{"top":397,"left":500,"right":589,"bottom":278},"307":{"top":407,"left":501,"right":588,"bottom":288},"308":{"top":419,"left":503,"right":592,"bottom":298},"309":{"top":432,"left":502,"right":593,"bottom":307},"310":{"top":445,"left":504,"right":594,"bottom":317},"311":{"top":450,"left":505,"right":598,"bottom":325},"312":{"top":456,"left":507,"right":600,"bottom":331},"313":{"top":460,"left":510,"right":603,"bottom":332},"314":{"top":460,"left":513,"right":606,"bottom":332},"315":{"top":458,"left":514,"right":607,"bottom":332},"316":{"top":452,"left":514,"right":608,"bottom":327},"317":{"top":444,"left":514,"right":606,"bottom":320},"318":{"top":432,"left":510,"right":604,"bottom":309},"319":{"top":422,"left":510,"right":603,"bottom":300},"320":{"top":414,"left":510,"right":602,"bottom":294},"321":{"top":408,"left":508,"right":603,"bottom":284},"322":{"top":406,"left":506,"right":602,"bottom":281},"324":{"top":400,"left":504,"right":600,"bottom":274},"325":{"top":397,"left":502,"right":602,"bottom":269},"326":{"top":390,"left":501,"right":600,"bottom":261},"327":{"top":385,"left":497,"right":603,"bottom":251},"328":{"top":385,"left":494,"right":603,"bottom":246},"329":{"top":381,"left":492,"right":600,"bottom":239},"330":{"top":372,"left":486,"right":592,"bottom":229},"331":{"top":362,"left":478,"right":587,"bottom":215},"332":{"top":350,"left":471,"right":582,"bottom":200},"333":{"top":332,"left":461,"right":576,"bottom":178},"334":{"top":318,"left":458,"right":571,"bottom":162},"335":{"top":305,"left":458,"right":568,"bottom":149},"336":{"top":292,"left":458,"right":565,"bottom":138},"337":{"top":282,"left":456,"right":565,"bottom":131},"338":{"top":286,"left":454,"right":568,"bottom":127},"339":{"top":292,"left":453,"right":570,"bottom":123},"340":{"top":295,"left":459,"right":570,"bottom":132},"341":{"top":289,"left":465,"right":575,"bottom":139},"342":{"top":277,"left":470,"right":577,"bottom":129},"343":{"top":266,"left":474,"right":581,"bottom":113},"344":{"top":265,"left":477,"right":588,"bottom":102},"346":{"top":228,"left":484,"right":596,"bottom":68},"347":{"top":217,"left":490,"right":604,"bottom":51},"348":{"top":204,"left":499,"right":610,"bottom":33},"349":{"top":193,"left":512,"right":622,"bottom":18},"350":{"top":191,"left":523,"right":633,"bottom":12},"351":{"top":182,"left":536,"right":642,"bottom":7},"353":{"top":171,"left":556,"right":659,"bottom":0}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_17/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=fa8b89bf6322ad1c86641ce043db0f0450b0cc340d2bb0f90404f0d87dd49634&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_17/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=ad19510c207128f5842ae371f9ee6b94ee230ee8c1cb46866cc216db69f319b2&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"ISRAELI_CIVILIAN"},"19":{"personId":"15d41287-a7c4-4a12-a722-2f8f4c9d6315","rects":{"187":{"top":451,"left":1184,"right":1234,"bottom":394},"188":{"top":460,"left":1195,"right":1241,"bottom":401},"189":{"top":475,"left":1206,"right":1255,"bottom":409},"190":{"top":484,"left":1218,"right":1267,"bottom":419},"191":{"top":494,"left":1233,"right":1275,"bottom":425}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_19/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=ac01b63c4d067d42dcc489a8bb5e3cab45ac1900720f6fb704ba640a6a9bf752&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_19/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=07423f60f847c3bd08cd604f01b5b64f1885d292fa2b70c1cae9a49ea9118a02&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"TERRORIST"},"21":{"personId":"faf2f2f7-92b2-45a1-bbb4-71466e735cac","rects":{"330":{"top":404,"left":851,"right":894,"bottom":358},"331":{"top":399,"left":839,"right":886,"bottom":349},"332":{"top":394,"left":839,"right":887,"bottom":345},"333":{"top":348,"left":759,"right":903,"bottom":64},"334":{"top":357,"left":747,"right":902,"bottom":72},"335":{"top":338,"left":739,"right":858,"bottom":87},"336":{"top":317,"left":734,"right":865,"bottom":49},"337":{"top":319,"left":722,"right":868,"bottom":17},"338":{"top":294,"left":722,"right":876,"bottom":-23},"339":{"top":279,"left":721,"right":881,"bottom":-60},"340":{"top":276,"left":718,"right":912,"bottom":-123},"343":{"top":255,"left":715,"right":896,"bottom":-120}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_21/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=44f04fb6103211638d52abcd9d684fd348bcf0ed3f5d544aaf739175d2d3016a&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_21/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=e6db027d064706b622113f82edeb6dd485f25cb3276817617940f7647928fa8d&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"INVALID"},"29":{"personId":"180fdf12-1749-40dd-9f8e-eacbcaf7ff41","rects":{"397":{"top":717,"left":365,"right":486,"bottom":531},"398":{"top":717,"left":438,"right":555,"bottom":550},"407":{"top":713,"left":567,"right":676,"bottom":520},"408":{"top":680,"left":601,"right":698,"bottom":514},"409":{"top":674,"left":679,"right":786,"bottom":498},"410":{"top":653,"left":802,"right":908,"bottom":475},"411":{"top":595,"left":952,"right":1054,"bottom":439}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_29/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=ac3efb134440a20543245ff133718f3318361a6ae2ed1ba9934794ba68a94ffc&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_29/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=ee1e9e8a3c92f2bd5bb4d78a2c0aa0419aebf3db571e20cf50eebad6f572623d&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"ISRAELI_CIVILIAN"},"35":{"personId":"d5089b3c-2eb3-4040-aac5-87dd009b255a","rects":{"449":{"top":351,"left":261,"right":423,"bottom":85},"450":{"top":379,"left":218,"right":374,"bottom":107}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_35/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=bbc70598e6e9b8aedb92860e8b64b7833505c60aa3c6b028c3cc74f75309ab29&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_35/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=34e121526d2ddd73646fa9940ad45fae7d69392f95dbd7ffc0db0743e7d7bfc5&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"TERRORIST"},"37":{"personId":"320fd7f1-1201-4154-ba32-e7a691f0bdd6","rects":{"506":{"top":202,"left":698,"right":768,"bottom":112},"507":{"top":250,"left":581,"right":647,"bottom":161},"508":{"top":301,"left":457,"right":527,"bottom":208}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_37/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=df8e56a941f38cd37420dcb523144d8dd0ab6c3c4c1d284520bf3349d0bc7160&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_37/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=6668dc857edf6370bdde0b55883cb2624d117b90da911e7302afad9e6318bf01&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"INVALID"},"39":{"personId":"213fe09c-bfc8-4bae-929e-c66e2a1b6cd0","rects":{"512":{"top":256,"left":670,"right":783,"bottom":103},"513":{"top":288,"left":601,"right":713,"bottom":136},"514":{"top":315,"left":548,"right":659,"bottom":164},"515":{"top":323,"left":509,"right":623,"bottom":170},"516":{"top":333,"left":493,"right":605,"bottom":181},"517":{"top":339,"left":483,"right":593,"bottom":189},"518":{"top":335,"left":476,"right":583,"bottom":190},"519":{"top":335,"left":458,"right":569,"bottom":188},"520":{"top":345,"left":451,"right":558,"bottom":204},"521":{"top":368,"left":443,"right":550,"bottom":227},"522":{"top":402,"left":446,"right":550,"bottom":260},"523":{"top":436,"left":459,"right":556,"bottom":297},"524":{"top":457,"left":465,"right":561,"bottom":321},"525":{"top":471,"left":467,"right":562,"bottom":339},"526":{"top":476,"left":465,"right":557,"bottom":346},"527":{"top":460,"left":461,"right":554,"bottom":330},"528":{"top":434,"left":461,"right":555,"bottom":306},"529":{"top":399,"left":467,"right":561,"bottom":271},"530":{"top":369,"left":479,"right":571,"bottom":245},"531":{"top":354,"left":492,"right":583,"bottom":234},"532":{"top":344,"left":499,"right":589,"bottom":226},"533":{"top":356,"left":501,"right":591,"bottom":237},"534":{"top":374,"left":504,"right":592,"bottom":256},"535":{"top":391,"left":501,"right":585,"bottom":274},"536":{"top":413,"left":504,"right":586,"bottom":301},"537":{"top":424,"left":506,"right":586,"bottom":313},"538":{"top":427,"left":503,"right":582,"bottom":320},"539":{"top":427,"left":498,"right":577,"bottom":322},"540":{"top":418,"left":497,"right":579,"bottom":310},"541":{"top":408,"left":500,"right":579,"bottom":304},"542":{"top":405,"left":502,"right":581,"bottom":302},"543":{"top":407,"left":509,"right":588,"bottom":303},"544":{"top":415,"left":517,"right":595,"bottom":313},"545":{"top":425,"left":523,"right":602,"bottom":321},"546":{"top":434,"left":533,"right":611,"bottom":330},"547":{"top":441,"left":542,"right":620,"bottom":338},"548":{"top":441,"left":550,"right":626,"bottom":342},"549":{"top":440,"left":552,"right":630,"bottom":342},"550":{"top":436,"left":550,"right":625,"bottom":339},"551":{"top":435,"left":542,"right":617,"bottom":339},"552":{"top":433,"left":529,"right":601,"bottom":341},"553":{"top":436,"left":514,"right":587,"bottom":340},"554":{"top":440,"left":507,"right":578,"bottom":344},"556":{"top":463,"left":498,"right":565,"bottom":372},"557":{"top":483,"left":491,"right":562,"bottom":389},"558":{"top":507,"left":492,"right":563,"bottom":411},"559":{"top":519,"left":504,"right":570,"bottom":422},"560":{"top":528,"left":505,"right":574,"bottom":431},"561":{"top":537,"left":509,"right":576,"bottom":440},"563":{"top":544,"left":521,"right":591,"bottom":449},"564":{"top":541,"left":527,"right":595,"bottom":450},"565":{"top":547,"left":535,"right":602,"bottom":456},"566":{"top":552,"left":540,"right":608,"bottom":461},"567":{"top":560,"left":549,"right":616,"bottom":472},"568":{"top":566,"left":563,"right":631,"bottom":478},"569":{"top":568,"left":589,"right":655,"bottom":479},"570":{"top":569,"left":623,"right":690,"bottom":479},"571":{"top":565,"left":668,"right":736,"bottom":476},"572":{"top":554,"left":736,"right":805,"bottom":465}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_39/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=bbacc588c91cc840301380763d344ea1f3ef1bd7e057bb184c82fcdd8159e71c&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_39/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=3c8a679ab59c6599f2d46292792f9ab49023136144861cbbb843f31d119ec5aa&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"ISRAELI_CIVILIAN"},"40":{"personId":"234de11f-0278-470f-81c0-f325ee5145d8","rects":{"573":{"top":539,"left":831,"right":900,"bottom":444}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_40/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=d96c197dbc2c999c5f3c6111ba7374cdbc5148f57c8c762c0fb6ab241d8c5201&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_40/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=42dc33a5b885fd042c123122d26ee885c5a68946bdda753124721d7f13fa393c&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"INVALID"},"42":{"personId":"c8abb546-a408-4439-8166-7782910febf1","rects":{"538":{"top":554,"left":-17,"right":73,"bottom":449},"539":{"top":553,"left":-16,"right":63,"bottom":448},"540":{"top":545,"left":-18,"right":65,"bottom":442},"541":{"top":537,"left":-17,"right":62,"bottom":432},"545":{"top":498,"left":14,"right":88,"bottom":426},"546":{"top":497,"left":30,"right":98,"bottom":424},"547":{"top":492,"left":41,"right":110,"bottom":418},"548":{"top":488,"left":49,"right":118,"bottom":411},"549":{"top":485,"left":50,"right":119,"bottom":410},"550":{"top":487,"left":45,"right":115,"bottom":411},"551":{"top":494,"left":38,"right":107,"bottom":420},"552":{"top":507,"left":27,"right":94,"bottom":429},"553":{"top":525,"left":16,"right":84,"bottom":445},"554":{"top":541,"left":9,"right":79,"bottom":461},"556":{"top":586,"left":5,"right":68,"bottom":508},"557":{"top":604,"left":-5,"right":51,"bottom":529},"558":{"top":628,"left":-5,"right":49,"bottom":551},"560":{"top":641,"left":-5,"right":58,"bottom":557},"561":{"top":640,"left":-5,"right":53,"bottom":564},"562":{"top":644,"left":-14,"right":55,"bottom":551},"563":{"top":636,"left":-15,"right":55,"bottom":547},"564":{"top":628,"left":-5,"right":59,"bottom":547},"565":{"top":627,"left":0,"right":62,"bottom":548},"567":{"top":637,"left":21,"right":76,"bottom":569},"568":{"top":653,"left":32,"right":88,"bottom":582},"569":{"top":666,"left":51,"right":110,"bottom":589},"570":{"top":676,"left":88,"right":148,"bottom":595}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_42/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=1814d268db28c844ec7050e7aab450430c2e8e1fad297303e3174998b1c07d0e&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_42/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=ae3f460c85e13e1baf657422e6ca7605978ac9f697b83d7f04ddec2f37fce8b3&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"TERRORIST"},"43":{"personId":"ffdae751-e17b-4e84-bc56-b93b1b08d4d0","rects":{"574":{"top":518,"left":959,"right":1030,"bottom":424}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_43/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=a2327c4ca51cc5014e659f6ded8841a42bc2e46d1e81dff09f143dce83fe61c2&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_43/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=baaa7772ab0313c5f9931953398e57cf024a94fb1a1aafba3a3fe096c17771a1&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"INVALID"},"44":{"personId":"06e77ee7-7114-4235-ba03-8d611c48e2d8","rects":{"556":{"top":447,"left":940,"right":1013,"bottom":311},"561":{"top":561,"left":914,"right":1026,"bottom":392},"562":{"top":563,"left":918,"right":1037,"bottom":399},"563":{"top":571,"left":929,"right":1046,"bottom":411},"564":{"top":587,"left":931,"right":1051,"bottom":420},"565":{"top":598,"left":926,"right":1054,"bottom":430},"566":{"top":602,"left":928,"right":1060,"bottom":432},"567":{"top":612,"left":934,"right":1058,"bottom":440},"568":{"top":617,"left":951,"right":1076,"bottom":452},"569":{"top":611,"left":979,"right":1106,"bottom":457},"570":{"top":609,"left":1021,"right":1145,"bottom":456},"571":{"top":603,"left":1080,"right":1211,"bottom":442},"575":{"top":492,"left":1124,"right":1200,"bottom":397}},"main_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_44/main_picture/main_pic_50.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=7cc35fed1d18b1ad602a14f3579541d7afd2ea7b800da3de433c72a1e01b1eaf&X-Amz-SignedHeaders=host&x-id=GetObject","gif_image":"https://face-shame-proj.s3.il-central-1.amazonaws.com/output-img/A%20couple%20youngsters%20hijacked%20into%20Gaza/v0004/person_44/main_picture/main_gif_100.gif?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAYWD36CAHVNFH6N7E%2F20231015%2Fil-central-1%2Fs3%2Faws4_request&X-Amz-Date=20231015T124908Z&X-Amz-Expires=3600&X-Amz-Signature=91e3740bdee96b7765a58f8c532822861b5dc05f696025442f6abd87e7fa6d98&X-Amz-SignedHeaders=host&x-id=GetObject","classification":"INVALID"}}};
+        reallyAllData = transformJSON(reallyAllData).then(function(reallyAllData) {
+            const fps = reallyAllData.video_fps;
+            if ( ["manual_person_tagging","manual_person_tagging_dev","manual_video_tagging","public_view_clip"].includes(mode) ) {
+                var source = $('<source src="' + reallyAllData.video_url + '" type="video/mp4" autoplay muted>');
+                $("#video").append(source);
+            }
+            var allData = {};
+            for ( var key in reallyAllData.persons)
+                allData[""+key] = reallyAllData.persons[key];
+            var classifications = {};
+            // FPS of the video
+            
+            
+            var parts = reallyAllData.video_url.split("/");
+            $(".filename").text(parts[parts.length - 1].split(".")[0]);
+            
+        
+            var keys = Object.keys(allData);
+            var keyIndex = 0;
+        
+            for ( var i = 0 ; i < keys.length ; i++ ) {
+                var key = keys[i];
+                var person = $("<div class='person'><span></span><img class='regular'><img class='animated' loop></div>");
+                person.attr("id","person_" + key);
+                person.attr("index",i);
+                person.find("img.regular").attr("src",allData[key].main_image);
+                person.find("img.animated").attr("src",allData[key].main_image.replace("main_pic.jpg","main_gif_50.gif"));
+                $("#persons-container").append(person);
+                
+                if ( allData[key].classification ) {
+                    person.find("span").addClass("classified").text(classificationOptions[allData[key].classification]);
+                }
+                else {
+                    person.find("span").text("ללא תיוג");
+                }
+            }
+            
+        
+            function updateClassifications() {
+                for ( var i = 0 ; i < keys.length ; i++ ) {
+                    if ( classifications[i] ) {
+                        $(".person[index='" + i + "'").attr("classification",classifications[i]);
+                        $(".person[index='" + i + "'").find("span").addClass("classified").text(classifications[i]);
+                    }
+                }
+            }
+        
+            $(document).on("click",".person",function() {
+                setCurrentPerson($(this).attr("index"));
+                keyIndex = parseInt($(this).attr("index"));
+            });
+            $(document).on("doubleclick",".person",function() {
+                alert("wow");
+            });
+        
+            $(document).on("click","#classification-container > div",function() {
+                var classification = $(this).text().trim();
+                for ( var value in classificationOptions ) {
+                    if ( classification == classificationOptions[value] ) {
+                        makeAPIRequest({"action":"classifyPerson","id":reallyAllData.id,"person_id":allData[keys[keyIndex]].personId,"classification":value}).then(function() {
+                        }).catch(function() {
+                            alert("something went wrong. please refresh browser");
+                        });
+                    }
+                }
+                classifications[keyIndex] = classification;
+                updateClassifications();
+                setCurrentPerson((keyIndex + 1) % keys.length);
+            });
+        
+        
+            function setCurrentPerson(index) {
+                keyIndex = parseInt(index);
+                if ( !allData[keys[keyIndex]].rects || !Object.keys(allData[keys[keyIndex]].rects).length )
+                    alert("no rects!!! please refresh browser");
+                    
+                var minFrame = 1000000000;
+                var maxFrame = -1;
+                for (var _frame in allData[keys[keyIndex]].rects) {
+                    minFrame = Math.min(minFrame,_frame);
+                    maxFrame = Math.max(maxFrame,_frame);
+                }
+                
+                var time = ( maxFrame - minFrame ) / fps;
+                if ( time > 1 ) {
+                    video.playbackRate = 1;
+                }
+                else {
+                    video.playbackRate = 0.5;
+                }
+    
+                    
+                $(".person.current").removeClass("current");
+                $(".person[index='" + index + "'").addClass("current");
+            }
+        
+            setCurrentPerson(keyIndex);
+            
+            let previousWidth = window.innerWidth;
+            let previousHeight = window.innerHeight;
+            
+            function checkScreenDimensions(force) {
+              const currentWidth = window.innerWidth;
+              const currentHeight = window.innerHeight;
+              
+              if (currentWidth !== previousWidth || currentHeight !== previousHeight || force === true) {
+                $("body").addClass("inspectSize",currentWidth,currentHeight,force);
+                
+                var containerWidth = $("#video-container-container").width();
+                var containerHeight = $("#video-container-container").height();
+        
+                var width = containerWidth;
+                var height = containerWidth / reallyAllData.video_width * reallyAllData.video_height;
+        
+                if ( height > containerHeight ) {
+                    height = containerHeight;
+                    width = containerHeight / reallyAllData.video_height * reallyAllData.video_width;
+                }
+        
+                $("#video-container").width(width);
+                $("#video-container").height(height);
+                
+                $("body").removeClass("inspectSize");            
+                
+                
+                // Update the previous dimensions
+                previousWidth = currentWidth;
+                previousHeight = currentHeight;
+              }
+            }
+            
+            // Set an interval to check for screen dimension changes
+            const interval = setInterval(checkScreenDimensions, 500); // Check every 1 second (adjust as needed)
+            checkScreenDimensions(true);
+            setTimeout(function() {
+                checkScreenDimensions(true);
+            },5000);
+            setTimeout(function() {
+                checkScreenDimensions(true);
+            },1000);
+            setTimeout(function() {
+                checkScreenDimensions(true);
+            },2000);
+            
+            
+        
+        
+        
+            const persons = [
+                '2',
+                '6',
+                '20',
+                '30',
+                '48',
+                '49'
+            ];
+        
+            const frameOverlay = $('<div id="frame-overlay" class="frame"></div>');
+            $("#video-container").append(frameOverlay);
+        
+            setInterval(function() {
+                var flag = false;
+                for (var key in allData) {
+                    if ( (""+keys[keyIndex]) !== (""+key) )
+                        continue;
+        
+                    var frame = Math.round(video.currentTime * fps);
+                    //console.log(frame,video.currentTime);
+                    var closest = 10000000000;
+                    var closestFrame = null;
+        
+                    var minFrame = 1000000000;
+                    var maxFrame = -1;
+                    for (var _frame in allData[""+key].rects) {
+                        minFrame = Math.min(minFrame,_frame);
+                        maxFrame = Math.max(maxFrame,_frame);
+                    }
+        
+                    if ( frame < ( minFrame - fps * video.playbackRate  ) ) {
+                        video.currentTime = Math.max(0,minFrame / fps - video.playbackRate);
+                        return;
+                    }
+                    if ( frame > ( maxFrame + fps * video.playbackRate ) ) {
+                        video.currentTime = Math.max(0,minFrame / fps - video.playbackRate);
+                        return;
+                    }
+        
+        
+                    for (var _frame in allData[""+key].rects) {
+                        var distance = Math.abs(frame - _frame);
+                        if (distance < fps / 50) {
+                            if (distance < closest) {
+                                closest = distance;
+                                closestFrame = allData[""+key].rects[_frame];
+                            }
+                        }
+                    }
+        
+                    if (closestFrame) {
+                        // Check if the current time of the video is close to the frame's time
+                        frameOverlay.css({
+                            left:`${closestFrame.left / reallyAllData.video_width * 100}%`,
+                            top:`${closestFrame.bottom / reallyAllData.video_height * 100}%`,
+                            width:`${(closestFrame.right - closestFrame.left) / reallyAllData.video_width * 100}%`,
+                            height:`${(closestFrame.top - closestFrame.bottom) / reallyAllData.video_height * 100}%`,
+                            opacity:1
+                        });
+                        flag = true;
+                    } else {
+                    }
+                }
+        
+                if ( !flag )
+                    frameOverlay.css("opacity",0);
+            },5);
+            
+            function makeAPIRequest(params) {
+              return new Promise((resolve, reject) => {
+                  // Get the current URL without query parameters
+                  const currentURL = window.location.href.split('?')[0];
+                
+                  // Create a new URL with the current domain and URI
+                  const url = new URL(currentURL);
+                
+                  // Add the input params to the URL
+                  for (const key in params) {
+                    url.searchParams.append(key, params[key]);
+                  }
+                
+                  // Make the API request with the updated URL
+                  fetch(url.href)
+                    .then(response => {
+                      if (response.ok) {
+                        return response.json();
+                      } else {
+                        throw new Error('API request failed');
+                      }
+                    })
+                    .then(data => {
+                        resolve();
+                    })
+                    .catch(error => {
+                      // Handle errors
+                      reject(error);
+                    });
+              });
+            }
+        });
+        
+    </script>
+</body>
+</html>

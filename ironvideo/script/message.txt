@@ -1,0 +1,182 @@
+import json
+import os
+import pickle
+import shutil
+
+import cv2
+from ultralytics import YOLO
+import cv2
+from insightface.app import FaceAnalysis
+
+import matplotlib.pyplot as plt
+
+imshow = lambda x: plt.imshow(x);
+plt.show()
+
+
+def protect(x, op):
+    try:
+        return op(x)
+    except:
+        return 'yo'
+
+
+def get_humans_from_frames(video_path,
+                           output_dir,
+                           coordinates_arr,
+                           object_id_arr,
+                           classes_arr):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("Error: Couldn't open the video.")
+        return
+
+    frame_idx = 0
+    while True:
+        print('frame_idx: ', frame_idx)
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        frame_coords = coordinates_arr[frame_idx]
+        frame_ids = object_id_arr[frame_idx]
+        frame_classes = classes_arr[frame_idx]
+
+        for object_index in range(len(frame_coords)):
+            if frame_classes[object_index] == 0:
+                cropped_frame = frame[int(frame_coords[object_index][1]):
+                                      int(frame_coords[object_index][3]),
+                                int(frame_coords[object_index][0]):
+                                int(frame_coords[object_index][2])]
+
+                face_analysis = FaceAnalysis(allowed_modules=['detection'])
+                face_analysis.prepare(ctx_id=0)
+
+                faces = face_analysis.get(cropped_frame)
+                if len(faces) > 0:
+                    cropped_face = cropped_frame[max(0, int(faces[0].bbox[1]) - 10):
+                                                 min(cropped_frame.shape[0],
+                                                     int(faces[0].bbox[3]) + 10),
+                                   max(0, int(faces[0].bbox[0]) - 10):
+                                   min(cropped_frame.shape[1], int(faces[0].bbox[2]) + 10)]
+
+                    try:
+                        if f"person_{int(frame_ids[object_index])}" not in os.listdir(output_dir):
+                            os.mkdir(os.path.join(output_dir,
+                                                  f"person_{int(frame_ids[object_index])}"))
+                            os.mkdir(os.path.join(output_dir,
+                                                  f"person_{int(frame_ids[object_index])}",
+                                                  'all_pictures'))
+
+                        output_path = os.path.join(output_dir,
+                                                   f"person_{int(frame_ids[object_index])}",
+                                                   "all_pictures")
+                        cv2.imwrite(os.path.join(output_path, f"frame_{frame_idx}.jpg"),
+                                    cropped_face)
+                        json.dump({'bottom': max(0, int(faces[0].bbox[1]) - 10),
+                                   'top': min(cropped_frame.shape[0], int(faces[0].bbox[3]) + 10),
+                                   'left': max(0, int(faces[0].bbox[0]) - 10),
+                                   'right': min(cropped_frame.shape[1],
+                                                int(faces[0].bbox[2]) + 10)},
+                                  open(os.path.join(output_path, f"frame_{frame_idx}.json"), 'w'))
+                    except:
+                        print('error')
+        else:
+            print(f"No coordinates provided for frame {frame_idx}. Skipping.")
+
+        frame_idx += 1
+
+    cap.release()
+
+
+def copy_random_images_and_json(src_folder,
+                                dest_folder='search_picture',
+                                change_for_main_pic = False,
+                                num_files=5):
+    # Create the destination folder if it doesn't exist
+    if not os.path.exists(dest_folder):
+        os.makedirs(dest_folder)
+
+    # List all .jpeg files in the source folder
+    all_images = [f for f in os.listdir(src_folder) if f.endswith('.jpg')]
+
+    # Randomly select 5 images
+    selected_images = all_images[:num_files]
+
+    for img in selected_images:
+        # Copy the image file
+        shutil.copy2(os.path.join(src_folder, img), dest_folder)
+
+        if change_for_main_pic:
+            os.rename(os.path.join(dest_folder, img), os.path.join(dest_folder, 'main_pic.jpg'))
+        json_file_name = os.path.splitext(img)[0] + '.json'
+        json_file_path = os.path.join(src_folder, json_file_name)
+
+        # If corresponding .json exists, copy that too
+        if os.path.exists(os.path.join(src_folder, json_file_name)):
+            shutil.copy2(os.path.join(src_folder, json_file_name), dest_folder)
+
+            if change_for_main_pic:
+                # Update the copied JSON with the frame_id field
+                dest_json_path = os.path.join(dest_folder, json_file_name)
+                with open(dest_json_path, 'r') as json_file:
+                    data = json.load(json_file)
+
+                data["frame"] = int(img[6:][:-4])
+
+                with open(dest_json_path, 'w') as json_file:
+                    json.dump(data, json_file, indent=4)
+
+                if change_for_main_pic:
+                    os.rename(os.path.join(dest_json_path),
+                              os.path.join(dest_folder, 'main_pic.json'))
+
+
+if __name__ == '__main__':
+    clip_path = 'VIDEO-2023-10-07-12-58-38.mp4'
+    output_dir = 'VIDEO-2023-10-07-12-58-38'
+    # os.mkdir('Noa, the famous captive being held in captivity')
+    if True:
+        model = YOLO('yolov8n-seg.pt')  # Load an official Segment model
+        tags = model.track(source=clip_path, show=False)  # Tracking with default tracker
+
+        xyxy = [protect(tag, lambda x: x.boxes.xyxy.cpu().numpy()) for tag in tags]
+        ids = [protect(tag, lambda x: x.boxes.id.cpu().numpy()) for tag in tags]
+        obj_class = [protect(tag, lambda x: x.boxes.cls.cpu().numpy()) for tag in tags]
+        obj_mask = [protect(tag, lambda x: x.masks.xy) for tag in tags]
+
+        pickle.dump(xyxy, open('xyxy', 'wb'))
+        pickle.dump(ids, open('ids', 'wb'))
+        pickle.dump(obj_class, open('obj_class', 'wb'))
+        pickle.dump(obj_mask, open('obj_mask', 'wb'))
+
+        # xyxy = pickle.load(open('xyxy', 'rb'))
+        # ids = pickle.load(open('ids', 'rb'))
+        # obj_class = pickle.load(open('obj_class', 'rb'))
+        # obj_mask = pickle.load(open('obj_mask', 'rb'))
+
+        get_humans_from_frames(video_path=clip_path,
+    					   output_dir=output_dir,
+    					   coordinates_arr=xyxy,
+    					   object_id_arr=ids,
+    					   classes_arr=obj_class)
+
+
+    # Example usage:
+    # Get parent directory of "person_5"
+    parent_directory = output_dir
+
+    # Get all directories in parent directory
+    all_directories = [d for d in os.listdir(parent_directory) if
+                       os.path.isdir(os.path.join(parent_directory, d))]
+    # Iterate through each directory and apply the function
+    for directory in all_directories:
+        mini_parent_dir = os.path.join(parent_directory, directory)
+        src_directory = os.path.join(mini_parent_dir, 'all_pictures')
+        dest_folder = os.path.join(mini_parent_dir, 'search_picture')
+        copy_random_images_and_json(src_directory, dest_folder, change_for_main_pic=False,
+                                    num_files=5)
+        dest_folder = os.path.join(mini_parent_dir, 'main_picture')
+        copy_random_images_and_json(src_directory, dest_folder, change_for_main_pic=True,
+                                    num_files=1)
+    
