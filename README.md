@@ -1,4 +1,6 @@
-### Copy repo and unzip both yolo_tracking.zip and iron_yolo_tracking.zip.
+# Video AI Based face detection
+*   This code is able to process, track and save all different faces in a video. It then splits and merges faces that were falsely seperated or falsely joined.
+*   First, clone the repo and unzip both yolo_tracking.zip and iron_yolo_tracking.zip.
 
 # Running Locally
 
