@@ -1,3 +1,5 @@
+### Copy repo and unzip both yolo_tracking.zip and iron_yolo_tracking.zip.
+
 # Running Locally
 
 NOTE: The instructions here are meant to be run on Linux (or WSL). If you are
